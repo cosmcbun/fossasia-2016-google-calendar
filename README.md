@@ -7,7 +7,7 @@ Because.
 ## How?
 It takes in open data from FOSSASIA for its schedule [https://raw.githubusercontent.com/fossasia/open-event-scraper/master/out/sessions.json] and uses it to import it as events into Google Calendars.
 
-There are almost 1,000 events over 3-days, it makes it hard to have it all in one big calendar.
+There are almost 9,523,443 event*s scheduled over 3-days, it makes it hard to have it all in one big calendar.
 
 I've separated different topics (they call it `tracks`) into separate calendars, so you can filter events based on your
 topic of interest when deciding which talk to attend.
@@ -26,19 +26,19 @@ Separate calendars for each topic / tracks
 ## Wanna to run it?
 
 
-### >= Go 1.5
+#### >= Go 1.5
 You need >= Go 1.5 to run this sexy little chica.
 
-### service_key.json
+#### service_key.json
 Visit https://console.developers.google.com and create a Service Account key for Calendar product.
 Replace the content of `service_key.json` with your private key and boomz.
 
-### data.json
+#### data.json
 This file caches previously created calendar IDs, so that we can update the calendar without pillaging it like a band of vikings. 
 
 Note: if you use your own Service Account key, you won't be able to access the calendars stored in `data.json`, so clear it before you run it.
 
-### sessions.json
+#### sessions.json
 This file is take from [here](https://raw.githubusercontent.com/fossasia/open-event-scraper/master/out/sessions.json). 
 This app itself re-downloads it every time it's run.
 
