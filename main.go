@@ -202,7 +202,7 @@ func main() {
 
 	}
 	// clear all existing events
-	events, _ := srv.Events.List(masterCalendarID).Do()
+	events, _ := srv.Events.List(masterCalendarID).MaxResults(2500).Do()
 	if events != nil {
 		for _, event := range events.Items {
 			log.Println("Deleting ", event.Id, event.Summary)
@@ -249,7 +249,7 @@ func main() {
 
 		}
 		// clear all existing events
-		events, _ := srv.Events.List(calendarID).Do()
+		events, _ := srv.Events.List(calendarID).MaxResults(2500).Do()
 		if events != nil {
 			for _, event := range events.Items {
 				log.Println("Deleting ", event.Id, event.Summary)
