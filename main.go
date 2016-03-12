@@ -200,9 +200,14 @@ func main() {
 			log.Fatalf("Failed to set calendar ACL %v", err)
 		}
 
-	} else {
-		// clear all existing events
-		srv.Calendars.Clear(masterCalendarID).Do()
+	}
+	// clear all existing events
+	events, _ := srv.Events.List(masterCalendarID).Do()
+	if events != nil {
+		for _, event := range events.Items {
+			log.Println("Deleteing ", event.Id, event.Summary)
+			srv.Events.Delete(masterCalendarID, event.Id).Do()
+		}
 	}
 	calendarIDs = append(calendarIDs, masterCalendarID)
 
@@ -242,9 +247,14 @@ func main() {
 				log.Fatalf("Failed to set calendar ACL %v", err)
 			}
 
-		} else {
-			// clear all existing events
-			srv.Calendars.Clear(calendarID).Do()
+		}
+		// clear all existing events
+		events, _ := srv.Events.List(calendarID).Do()
+		if events != nil {
+			for _, event := range events.Items {
+				log.Println("Deleteing ", event.Id, event.Summary)
+				srv.Events.Delete(calendarID, event.Id).Do()
+			}
 		}
 
 		// store created calendar ids
