@@ -9,7 +9,6 @@ import (
 	"strings"
 
 	"bytes"
-	"github.com/kr/pretty"
 	"golang.org/x/net/context"
 	"golang.org/x/oauth2/google"
 	"google.golang.org/api/calendar/v3"
@@ -54,15 +53,36 @@ const SessionsJSONURL = "https://raw.githubusercontent.com/fossasia/open-event-s
 const ServiceKeyFilename = "service_key.json"
 const CalendarDataFilename = "data.json"
 const GoogleCalendarURLBase = "https://calendar.google.com/calendar/render"
+const DefaultLocation = "Misc"
+
+var ScrubbedLocation = map[string]string{
+	"Exhibition and Snack Area":              "Exhibition and Snack Area",
+	"Level 3, Dalton Hall":                   "Level 3, Dalton Hall",
+	"Level 1, Observatory Classroom":         "Level 1, Observatory Classroom",
+	"Level 3, Faraday Hall":                  "Level 3, Faraday Hall",
+	"Level 3, Planck Hall":                   "Level 3, Planck Hall",
+	"Level 2, Room to be decided":            "Level 2, Room to be decided",
+	"Level 3, Fermi Hall":                    "Level 3, Fermi Hall",
+	"Level 2, Herschel Hall":                 "Level 2, Herschel Hall",
+	"Clarke Quay":                            "Level 1, Ground Floor, Exhibition Hall",
+	"Level 1, Digital Design Studio":         "Level 1, Digital Design Studio",
+	"Level 2, Einstein Hall":                 "Level 2, Einstein Hall",
+	"Level 1, Tinkering Studio":              "Level 1, Tinkering Studio",
+	"Level 1, Ground Floor, Exhibition Hall": "Level 1, Ground Floor, Exhibition Hall",
+	"Marquee Theatre":                        "Marquee Theatre",
+	"Dalton Hall":                            "Level 3, Dalton Hall",
+	"Level 3, Lewis Hall":                    "Level 3, Lewis Hall",
+	"Level 3, Pauling Hall":                  "Level 3, Pauling Hall",
+}
 
 type Speaker struct {
-	ID   int    `json:"id"`
-	Name string `json:"name"`
-}
-type Track struct {
 	ID           int    `json:"id"`
 	Name         string `json:"name"`
-	Organization string `json:"organization"`
+	Organisation string `json:"organisation"`
+}
+type Track struct {
+	ID   int    `json:"id"`
+	Name string `json:"name"`
 }
 
 type SessionEntry struct {
@@ -83,7 +103,11 @@ func (s Speakers) String() string {
 	speakers := []Speaker(s)
 	res := []string{}
 	for _, speaker := range speakers {
-		res = append(res, speaker.Name)
+		if speaker.Organisation != "" {
+			res = append(res, fmt.Sprintf(`%v (%v)`, speaker.Name, speaker.Organisation))
+		} else {
+			res = append(res, fmt.Sprintf(`%v`, speaker.Name))
+		}
 	}
 	return strings.Join(res, ", ")
 }
@@ -93,11 +117,67 @@ type FOSSAsiaEvent struct {
 }
 
 type FOSSAsiaCalendarIDs struct {
-	MasterCalendarID string            `json:"master_calendar_id"`
-	TrackCalendarIDs map[string]string `json:"track_calendar_ids"`
-	URL              string            `json:"url"`
+	MasterCalendarID    string            `json:"master_calendar_id"`
+	TrackCalendarIDs    map[string]string `json:"track_calendar_ids"`
+	LocationCalendarIDs map[string]string `json:"location_calendar_ids"`
+	URL                 string            `json:"url"`
 }
 
+func (d *FOSSAsiaCalendarIDs) MasterCalendarURL() string {
+	url := []string{GoogleCalendarURLBase, "?", d.MasterCalendarID}
+	return strings.Join(url, "")
+}
+func (d *FOSSAsiaCalendarIDs) TrackCalendarURL() string {
+	url := []string{GoogleCalendarURLBase, "?"}
+	for _, calendarID := range d.TrackCalendarIDs {
+		url = append(url, fmt.Sprintf("cid=%v&", calendarID))
+	}
+	return strings.Join(url, "")
+}
+func (d *FOSSAsiaCalendarIDs) LocationCalendarURL() string {
+	url := []string{GoogleCalendarURLBase, "?"}
+	for _, calendarID := range d.LocationCalendarIDs {
+		url = append(url, fmt.Sprintf("cid=%v&", calendarID))
+	}
+	return strings.Join(url, "")
+}
+
+func createCalendar(srv *calendar.Service, summary, description string) (string, error) {
+	calendarSummary := fmt.Sprintf("FOSSASIA 2016 - ALL")
+	newCal, err := srv.Calendars.Insert(&calendar.Calendar{
+		Description: "FOSSASIA 2016 Schedule\nSource available at https://github.com/sogko/fossasia-2016-google-calendar",
+		Summary:     calendarSummary,
+		TimeZone:    "Asia/Singapore",
+		Location:    "Singapore",
+	}).Do()
+	if err != nil {
+		return "", fmt.Errorf("Failed to create master calendar %v", err)
+	}
+
+	// create ACL for master calendar
+	publicACLrule := &calendar.AclRule{
+		Scope: &calendar.AclRuleScope{
+			Type:  "default",
+			Value: "",
+		},
+		Role: "reader",
+	}
+	publicACLrule, err = srv.Acl.Insert(newCal.Id, publicACLrule).Do()
+	if err != nil {
+		return "", fmt.Errorf("Failed to set calendar ACL %v", err)
+	}
+
+	return newCal.Id, nil
+}
+func clearCalendar(srv *calendar.Service, calendarID string) {
+	events, _ := srv.Events.List(calendarID).MaxResults(2500).Do()
+	if events != nil {
+		for _, event := range events.Items {
+			log.Println("Deleting ", event.Id, event.Summary)
+			srv.Events.Delete(calendarID, event.Id).Do()
+		}
+	}
+}
 func main() {
 
 	// get cached data
@@ -125,11 +205,68 @@ func main() {
 	}
 	json.Unmarshal(body, &sessionsData)
 
-	// organize sessions by tracks
-	sessionsTracksMap := map[int][]*SessionEntry{}
+	// read calendar service key JWT config
+	b, err = ioutil.ReadFile(ServiceKeyFilename)
+	if err != nil {
+		log.Fatalf("Unable to read client secret file: %v", err)
+	}
+	config, err := google.JWTConfigFromJSON(b, calendar.CalendarScope)
+	if err != nil {
+		log.Fatalf("Unable to parse client secret file to config: %v", err)
+	}
+
+	// get calendar client
+	ctx := context.Background()
+	client := config.Client(ctx)
+	srv, err := calendar.New(client)
+	if err != nil {
+		log.Fatalf("Unable to retrieve calendar Client %v", err)
+	}
+
+	// create events for each sessions
+	events := []*calendar.Event{}
+	sessionsEventsMap := map[string]*calendar.Event{}
+	for _, session := range sessionsData.Sessions {
+		if session.Title == "" || session.StartTime == "" || session.EndTime == "" {
+			continue
+		}
+		title := session.Title
+		if session.Track.Name != "" {
+			title = fmt.Sprintf("%v [%v]", session.Title, session.Track.Name)
+		}
+		description := fmt.Sprintf("Speaker(s): %v", Speakers(session.Speakers).String())
+		if session.Type != "" {
+			description = fmt.Sprintf("%v\n%v", session.Type, description)
+		}
+		if session.Description != "" {
+			description = fmt.Sprintf("%v\n\n%v", session.Description, description)
+		}
+
+		// add to track calendar
+		event := &calendar.Event{
+			Summary:     title,
+			Description: description,
+			Location:    fmt.Sprintf("%v, Science Centre Singapore", session.Location),
+			Start: &calendar.EventDateTime{
+				DateTime: session.StartTime,
+				TimeZone: "Asia/Singapore",
+			},
+			End: &calendar.EventDateTime{
+				DateTime: session.EndTime,
+				TimeZone: "Asia/Singapore",
+			},
+		}
+
+		events = append(events, event)
+		sessionsEventsMap[session.SessionID] = event
+	}
+
+	// organize events by tracks
+	eventTracksMap := map[int][]*calendar.Event{}
 	trackIDs := []int{}
 	tracksMap := map[int]Track{}
 	for _, session := range sessionsData.Sessions {
+
 		// collect track ids
 		hasTrackID := false
 		for _, trackID := range trackIDs {
@@ -143,192 +280,149 @@ func main() {
 			tracksMap[session.Track.ID] = session.Track
 		}
 
-		if _, ok := sessionsTracksMap[session.Track.ID]; !ok {
-			sessionsTracksMap[session.Track.ID] = []*SessionEntry{}
+		if _, ok := eventTracksMap[session.Track.ID]; !ok {
+			eventTracksMap[session.Track.ID] = []*calendar.Event{}
 		}
-		sessionsTracksMap[session.Track.ID] = append(sessionsTracksMap[session.Track.ID], session)
+		if event, ok := sessionsEventsMap[session.SessionID]; ok {
+			eventTracksMap[session.Track.ID] = append(eventTracksMap[session.Track.ID], event)
+		}
 	}
 
-	// read service key JWT config
-	b, err = ioutil.ReadFile(ServiceKeyFilename)
-	if err != nil {
-		log.Fatalf("Unable to read client secret file: %v", err)
-	}
-	config, err := google.JWTConfigFromJSON(b, calendar.CalendarScope)
-	if err != nil {
-		log.Fatalf("Unable to parse client secret file to config: %v", err)
+	// organize sessions by location
+	eventsLocationsMap := map[string][]*calendar.Event{}
+	locations := []string{}
+	for _, session := range sessionsData.Sessions {
+
+		// scrub `location` value
+		location := session.Location
+		if location == "" {
+			location = DefaultLocation
+		}
+		location, _ = ScrubbedLocation[location]
+
+		// collect locations
+		hasLocation := false
+		for _, loc := range locations {
+			if loc == location {
+				hasLocation = true
+				break
+			}
+		}
+		if !hasLocation {
+			locations = append(locations, location)
+		}
+
+		if _, ok := eventsLocationsMap[location]; !ok {
+			eventsLocationsMap[location] = []*calendar.Event{}
+		}
+		if event, ok := sessionsEventsMap[session.SessionID]; ok {
+			eventsLocationsMap[location] = append(eventsLocationsMap[location], event)
+		}
 	}
 
-	// get calendar Client
-	ctx := context.Background()
-	client := config.Client(ctx)
-	srv, err := calendar.New(client)
-	if err != nil {
-		log.Fatalf("Unable to retrieve calendar Client %v", err)
-	}
-
+	// track calendar ids
 	trackCalendarIDsMap := map[int]string{}
-	calendarIDs := []string{}
+	locationCalendarIDsMap := map[string]string{}
 
 	// create a master "ALL" calendar. why? because.
 	masterCalendarID := calendarData.MasterCalendarID
 	if masterCalendarID == "" {
-		calendarSummary := fmt.Sprintf("FOSSASIA 2016 - ALL")
-		newCal, err := srv.Calendars.Insert(&calendar.Calendar{
-			Description: "FOSSASIA 2016 Schedule\nSource available at https://github.com/sogko/fossasia-2016-google-calendar",
-			Summary:     calendarSummary,
-			TimeZone:    "Asia/Singapore",
-			Location:    "Singapore",
-		}).Do()
-		if err != nil {
-			log.Fatalf("Failed to create master calendar %v", err)
-			return
-		}
-		masterCalendarID = newCal.Id
+
+		masterCalendarID, err = createCalendar(
+			srv,
+			"FOSSASIA 2016 - ALL",
+			"FOSSASIA 2016 Schedule\nSource available at https://github.com/sogko/fossasia-2016-google-calendar",
+		)
+
 		calendarData.MasterCalendarID = masterCalendarID
-
-		// create ACL for master calendar
-		publicACLrule := &calendar.AclRule{
-			Scope: &calendar.AclRuleScope{
-				Type:  "default",
-				Value: "",
-			},
-			Role: "reader",
-		}
-		publicACLrule, err = srv.Acl.Insert(masterCalendarID, publicACLrule).Do()
-		if err != nil {
-			log.Fatalf("Failed to set calendar ACL %v", err)
-		}
-
 	}
 	// clear all existing events
-	events, _ := srv.Events.List(masterCalendarID).MaxResults(2500).Do()
-	if events != nil {
-		for _, event := range events.Items {
-			log.Println("Deleting ", event.Id, event.Summary)
-			srv.Events.Delete(masterCalendarID, event.Id).Do()
-		}
-	}
-	calendarIDs = append(calendarIDs, masterCalendarID)
+	clearCalendar(srv, masterCalendarID)
 
-	// for each track, create a calendar and add its session entries
+	// for each track, create a calendar and add its events
 	// at the same time, add events to "ALL" calendar
-	for trackID, sessions := range sessionsTracksMap {
+	for trackID, events := range eventTracksMap {
 
 		// create calendar for track
 		track, _ := tracksMap[trackID]
 		trackIDStr := fmt.Sprintf("%v", trackID)
 		calendarID, ok := calendarData.TrackCalendarIDs[trackIDStr]
 		if calendarID == "" || !ok {
-			calendarSummary := fmt.Sprintf("FA16 - %v", track.Name)
-			newCal, err := srv.Calendars.Insert(&calendar.Calendar{
-				Description: fmt.Sprintf("FOSSASIA 2016 Schedule - %v\nSource available at https://github.com/sogko/fossasia-2016-google-calendar", track.Name),
-				Summary:     calendarSummary,
-				TimeZone:    "Asia/Singapore",
-				Location:    "Singapore",
-			}).Do()
-			if err != nil {
-				log.Fatalf("Failed to create calendar %v", err)
-				return
-			}
-			calendarID = newCal.Id
-			calendarData.TrackCalendarIDs[trackIDStr] = calendarID
 
-			// create ACL for newly created calendar
-			publicACLrule := &calendar.AclRule{
-				Scope: &calendar.AclRuleScope{
-					Type:  "default",
-					Value: "",
-				},
-				Role: "reader",
-			}
-			publicACLrule, err = srv.Acl.Insert(calendarID, publicACLrule).Do()
-			if err != nil {
-				log.Fatalf("Failed to set calendar ACL %v", err)
-			}
+			calendarID, err = createCalendar(
+				srv,
+				fmt.Sprintf("FA16 - %v", track.Name),
+				fmt.Sprintf("FOSSASIA 2016 Schedule - %v\nSource available at https://github.com/sogko/fossasia-2016-google-calendar", track.Name),
+			)
+
+			calendarData.TrackCalendarIDs[trackIDStr] = calendarID
 
 		}
 		// clear all existing events
-		events, _ := srv.Events.List(calendarID).MaxResults(2500).Do()
-		if events != nil {
-			for _, event := range events.Items {
-				log.Println("Deleting ", event.Id, event.Summary)
-				srv.Events.Delete(calendarID, event.Id).Do()
-			}
-		}
+		clearCalendar(srv, calendarID)
 
 		// store created calendar ids
 		trackCalendarIDsMap[trackID] = calendarID
-		calendarIDs = append(calendarIDs, calendarID)
 
+		// add events into google calendar
+		log.Printf("Inserting %v session entries for track %v\n", len(events), trackID)
+		for _, event := range events {
 
-		// add session entries into google calendar
-		log.Printf("Inserting %v session entries for track %v\n", len(sessions), trackID)
-		for _, session := range sessions {
-			if session.Title == "" || session.StartTime == "" || session.EndTime == "" {
-				continue
-			}
-			title := session.Title
-			if session.Track.Name != "" {
-				title = fmt.Sprintf("%v [%v]", session.Title, session.Track.Name)
-			}
-			description := fmt.Sprintf("Speaker(s): %v", Speakers(session.Speakers).String())
-			if session.Type != "" {
-				description = fmt.Sprintf("%v\n%v", session.Type, description)
-			}
-			if session.Description != "" {
-				description = fmt.Sprintf("%v\n\n%v", session.Description, description)
-			}
-
-			// add to track calendar
-			event, err := srv.Events.Insert(calendarID, &calendar.Event{
-				Summary:     title,
-				Description: description,
-				Location:    fmt.Sprintf("%v, Science Centre Singapore", session.Location),
-				Start: &calendar.EventDateTime{
-					DateTime: session.StartTime,
-					TimeZone: "Asia/Singapore",
-				},
-				End: &calendar.EventDateTime{
-					DateTime: session.EndTime,
-					TimeZone: "Asia/Singapore",
-				},
-			}).Do()
+			// add event to track calendar
+			newEvent, err := srv.Events.Insert(calendarID, event).Do()
 			if err != nil {
 				log.Fatalf("Error inserting event\n", err)
 			} else {
-				log.Printf("Inserted %v %v\n", event.Id, event.Summary)
+				log.Printf("Inserted %v %v\n", newEvent.Id, newEvent.Summary)
 			}
 
 			// add to master calendar
-			event, err = srv.Events.Insert(masterCalendarID, &calendar.Event{
-				Summary:     title,
-				Description: description,
-				Location:    fmt.Sprintf("%v, Science Centre Singapore", session.Location),
-				Start: &calendar.EventDateTime{
-					DateTime: session.StartTime,
-					TimeZone: "Asia/Singapore",
-				},
-				End: &calendar.EventDateTime{
-					DateTime: session.EndTime,
-					TimeZone: "Asia/Singapore",
-				},
-			}).Do()
+			event, err = srv.Events.Insert(masterCalendarID, event).Do()
 			if err != nil {
 				log.Fatalf("[master] Error inserting %v %v %v\n", event.Id, event.Summary, err)
 			}
 		}
 	}
 
-	pretty.Println("C", calendarData)
+	// for each location, create a calendar and add its events
+	for location, events := range eventsLocationsMap {
+
+		// create calendar for location
+		calendarID, ok := calendarData.LocationCalendarIDs[location]
+		if calendarID == "" || !ok {
+			calendarID, err = createCalendar(
+				srv,
+				fmt.Sprintf("FA16 - %v", location),
+				fmt.Sprintf("FOSSASIA 2016 Schedule - %v\nSource available at https://github.com/sogko/fossasia-2016-google-calendar", location),
+			)
+
+			calendarData.LocationCalendarIDs[location] = calendarID
+
+		}
+		// clear all existing events
+		clearCalendar(srv, calendarID)
+
+		// store created calendar ids
+		locationCalendarIDsMap[location] = calendarID
+
+		// add events into google calendar
+		log.Printf("Inserting %v session entries for location %v\n", len(events), location)
+		for _, event := range events {
+
+			// add event to location calendar
+			newEvent, err := srv.Events.Insert(calendarID, event).Do()
+			if err != nil {
+				log.Fatalf("Error inserting event\n", err)
+			} else {
+				log.Printf("Inserted %v %v\n", newEvent.Id, newEvent.Summary)
+			}
+		}
+	}
 
 	// print URL to add calendars
-	url := []string{GoogleCalendarURLBase, "?"}
-	for _, calendarID := range calendarIDs {
-		url = append(url, fmt.Sprintf("cid=%v&", calendarID))
-	}
-	calendarData.URL = strings.Join(url, "")
-	fmt.Println("\n\nView calendars at: ", calendarData.URL)
+	fmt.Println("\n\nView MASTER calendar at: ", calendarData.MasterCalendarURL())
+	fmt.Println("\n\nView TRACK calendar at: ", calendarData.TrackCalendarURL())
+	fmt.Println("\n\nView LOCATION calendar at: ", calendarData.LocationCalendarURL())
 
 	// store calendar data into cache
 	buf := make([]byte, 0)
