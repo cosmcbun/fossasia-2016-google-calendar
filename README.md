@@ -7,7 +7,7 @@ Because.
 ## How?
 It takes in open data from FOSSASIA for its schedule [https://raw.githubusercontent.com/fossasia/open-event-scraper/master/out/sessions.json] and uses it to import it as events into Google Calendars.
 
-There are almost 9,523,443 event*s scheduled over 3-days, it makes it hard to have it all in one big calendar.
+There are almost 9,523,443 events* scheduled over 3-days, it makes it hard to have it all in one big calendar.
 
 I've separated different topics (they call it `tracks`) into separate calendars, so you can filter events based on your
 topic of interest when deciding which talk to attend.
@@ -24,7 +24,6 @@ Separate calendars for each topic / tracks
 
 
 ## Wanna to run it?
-
 
 #### >= Go 1.5
 You need >= Go 1.5 to run this sexy little chica.
@@ -44,6 +43,6 @@ This app itself re-downloads it every time it's run.
 
 
 ## Disclaimer
-This code was cobbled up during a lazy and hot Saturday afternoon. It's one those of "it-works" kind of thing.
+This code was cobbled up during a lazy and hot Saturday afternoon. It's one of those "it-works" kind of thing.
 
 
