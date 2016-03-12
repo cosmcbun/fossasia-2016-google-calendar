@@ -7,12 +7,14 @@ A quick and dirty little thing that takes FOSSASIA 2016 schedule and creates Goo
 Because.
 
 ## How?
-It takes in open data from FOSSASIA for its schedule [https://raw.githubusercontent.com/fossasia/open-event-scraper/master/out/sessions.json] and uses it to import it as events into Google Calendars.
+FOSSASIA has its schedule in JSON over here: https://raw.githubusercontent.com/fossasia/open-event-scraper/master/out/sessions.json.
 
-There are almost 9,523,443 events* scheduled over 3-days, it makes it hard to have it all in one big calendar.
+Squirt out a quick one that uses it to import the events into Google Calendars.
+
+There are over 300 events* scheduled over 3-days, it makes it hard to have it all in one big calendar.
 
 I've separated different topics (they call it `tracks`) into separate calendars, so you can filter events based on your
-topic of interest when deciding which talk to attend.
+topic of interest when deciding which talks to attend.
 
 ## Google Calendar URLS
 Click the following links to add FOSSASIA 2016 schedule to your Google Calendar
