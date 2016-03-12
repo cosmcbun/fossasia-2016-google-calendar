@@ -16,6 +16,8 @@ There are over 300 events* scheduled over 3-days, it makes it hard to have it al
 I've separated different topics (they call it `tracks`) into separate calendars, so you can filter events based on your
 topic of interest when deciding which talks to attend.
 
+Update: I've also separated the events by location, so you can easily decide if you'd be interested in the next talk or if you need to move to the next location.
+
 ## Google Calendar URLS
 Click the following links to add FOSSASIA 2016 schedule to your Google Calendar
 
@@ -25,6 +27,9 @@ All events in one calendar
 
 [FOSS ASIA 2016 - By Topics/Tracks](https://calendar.google.com/calendar/render?cid=gb9e6o5rhngojiooltgs73gbks@group.calendar.google.com&cid=dgdout91jqtgo5ir5krsghgq6g@group.calendar.google.com&cid=oeeack2tej4hepfnn5sl86ijv8@group.calendar.google.com&cid=efmcpobnjnflhg7p6amjjnucfo@group.calendar.google.com&cid=2u592kc3v676evfrchmmhtddhc@group.calendar.google.com&cid=2t6srepd45g1sp2igr9uhs1foc@group.calendar.google.com&cid=1sjun8vbpda14fhcdnb4ooku50@group.calendar.google.com&cid=ss8o2s4o1i71tbff7pvuhaf1ps@group.calendar.google.com&cid=o4lp7slj2k55rf9c5sfuavuegg@group.calendar.google.com&cid=0br88vtd48kk9rmeg7p02saueo@group.calendar.google.com&cid=9a5ddn4f5milnq5dmvu7i4pod0@group.calendar.google.com&cid=5jfq646ll31ovmnn5iad509c60@group.calendar.google.com&cid=so7meffbc6geit92c0veucn478@group.calendar.google.com&cid=bgichra2s39578j1s12cuovhkc@group.calendar.google.com&cid=llvl3lc03e0gggb29di6jf31k4@group.calendar.google.com&cid=5qg5cdi4qkr7n05eqgd9juhs6k@group.calendar.google.com&cid=mk37q05h3b4994boqbt534gmns@group.calendar.google.com)
 Separate calendars for each topic / tracks
+
+[FOSS ASIA 2016 - By Location](https://calendar.google.com/calendar/render?cid=ov6b5dkemi2528dlj83n4glg1g@group.calendar.google.com&cid=21b6iej8fr7o96f35i7hnenk7s@group.calendar.google.com&cid=slrjm4jc1rf5r0id3075riv6ec@group.calendar.google.com&cid=4h30mdgdpkgllrr2pgn637tgi0@group.calendar.google.com&cid=3c5cdgeht2rn9ctdtsm3oi0dd4@group.calendar.google.com&cid=irj1lm2uh1jqsbaohiugnjkvvk@group.calendar.google.com&cid=e2d9pgpakikakqt3pqmfanpqsg@group.calendar.google.com&cid=gtftudbspl0gm6dhb19j20kvcg@group.calendar.google.com&cid=u4uhp9lut7egdnervi15j2e9ok@group.calendar.google.com&cid=75se4nd7kuuvnsvmsft2m1n07c@group.calendar.google.com&cid=99og1djs5prfcf24fmdm4i5qa0@group.calendar.google.com&cid=0b0cn3l10pv46fcu5g4lio0i44@group.calendar.google.com&cid=rb1ccoll912m4j7sni2h4i4leg@group.calendar.google.com&cid=1k5bq9jksb42h4b9g2lm9o1v4s@group.calendar.google.com&cid=d38pm4r4t2j18tir3pa8obk61k@group.calendar.google.com)
+Separate calendars for each location
 
 
 ## Wanna to run it?

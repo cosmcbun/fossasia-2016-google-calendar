@@ -120,33 +120,37 @@ type FOSSAsiaCalendarIDs struct {
 	MasterCalendarID    string            `json:"master_calendar_id"`
 	TrackCalendarIDs    map[string]string `json:"track_calendar_ids"`
 	LocationCalendarIDs map[string]string `json:"location_calendar_ids"`
-	URL                 string            `json:"url"`
+	MasterCalendarURL   string            `json:"master_calendar_url"`
+	TrackCalendarURL    string            `json:"track_calendar_url"`
+	LocationCalendarURL string            `json:"location_calendar_url"`
 }
 
-func (d *FOSSAsiaCalendarIDs) MasterCalendarURL() string {
+func (d *FOSSAsiaCalendarIDs) GetMasterCalendarURL() string {
 	url := []string{GoogleCalendarURLBase, "?", d.MasterCalendarID}
-	return strings.Join(url, "")
+	d.MasterCalendarURL = strings.Join(url, "")
+	return d.MasterCalendarURL
 }
-func (d *FOSSAsiaCalendarIDs) TrackCalendarURL() string {
+func (d *FOSSAsiaCalendarIDs) GetTrackCalendarURL() string {
 	url := []string{GoogleCalendarURLBase, "?"}
 	for _, calendarID := range d.TrackCalendarIDs {
 		url = append(url, fmt.Sprintf("cid=%v&", calendarID))
 	}
-	return strings.Join(url, "")
+	d.TrackCalendarURL = strings.Join(url, "")
+	return d.TrackCalendarURL
 }
-func (d *FOSSAsiaCalendarIDs) LocationCalendarURL() string {
+func (d *FOSSAsiaCalendarIDs) GetLocationCalendarURL() string {
 	url := []string{GoogleCalendarURLBase, "?"}
 	for _, calendarID := range d.LocationCalendarIDs {
 		url = append(url, fmt.Sprintf("cid=%v&", calendarID))
 	}
-	return strings.Join(url, "")
+	d.LocationCalendarURL = strings.Join(url, "")
+	return d.LocationCalendarURL
 }
 
 func createCalendar(srv *calendar.Service, summary, description string) (string, error) {
-	calendarSummary := fmt.Sprintf("FOSSASIA 2016 - ALL")
 	newCal, err := srv.Calendars.Insert(&calendar.Calendar{
-		Description: "FOSSASIA 2016 Schedule\nSource available at https://github.com/sogko/fossasia-2016-google-calendar",
-		Summary:     calendarSummary,
+		Description: description,
+		Summary:     summary,
 		TimeZone:    "Asia/Singapore",
 		Location:    "Singapore",
 	}).Do()
@@ -170,14 +174,21 @@ func createCalendar(srv *calendar.Service, summary, description string) (string,
 	return newCal.Id, nil
 }
 func clearCalendar(srv *calendar.Service, calendarID string) {
-	events, _ := srv.Events.List(calendarID).MaxResults(2500).Do()
+	events, err := srv.Events.List(calendarID).MaxResults(2500).SingleEvents(true).ShowDeleted(false).Do()
+	if err != nil {
+		log.Printf(`Error retrieving events for %v`, calendarID)
+	}
 	if events != nil {
 		for _, event := range events.Items {
-			log.Println("Deleting ", event.Id, event.Summary)
-			srv.Events.Delete(calendarID, event.Id).Do()
+			log.Println("Deleting ", event.Id, event.Summary, calendarID)
+			err := srv.Events.Delete(calendarID, event.Id).Do()
+			if err != nil {
+				log.Printf(`Error deleting event %v`, event.Id)
+			}
 		}
 	}
 }
+
 func main() {
 
 	// get cached data
@@ -186,8 +197,15 @@ func main() {
 	err = json.Unmarshal(b, &calendarData)
 	if err != nil {
 		calendarData = FOSSAsiaCalendarIDs{
-			TrackCalendarIDs: map[string]string{},
+			TrackCalendarIDs:    map[string]string{},
+			LocationCalendarIDs: map[string]string{},
 		}
+	}
+	if calendarData.TrackCalendarIDs == nil || len(calendarData.TrackCalendarIDs) == 0 {
+		calendarData.TrackCalendarIDs = map[string]string{}
+	}
+	if calendarData.LocationCalendarIDs == nil || len(calendarData.LocationCalendarIDs) == 0 {
+		calendarData.LocationCalendarIDs = map[string]string{}
 	}
 
 	// get FOSSASIA 2016 sessions data (JSON)
@@ -337,6 +355,7 @@ func main() {
 		calendarData.MasterCalendarID = masterCalendarID
 	}
 	// clear all existing events
+	log.Println("masterCalendarID", masterCalendarID)
 	clearCalendar(srv, masterCalendarID)
 
 	// for each track, create a calendar and add its events
@@ -371,7 +390,7 @@ func main() {
 			// add event to track calendar
 			newEvent, err := srv.Events.Insert(calendarID, event).Do()
 			if err != nil {
-				log.Fatalf("Error inserting event\n", err)
+				log.Printf("Error inserting event\n", err)
 			} else {
 				log.Printf("Inserted %v %v\n", newEvent.Id, newEvent.Summary)
 			}
@@ -379,7 +398,7 @@ func main() {
 			// add to master calendar
 			event, err = srv.Events.Insert(masterCalendarID, event).Do()
 			if err != nil {
-				log.Fatalf("[master] Error inserting %v %v %v\n", event.Id, event.Summary, err)
+				log.Printf("[master] Error inserting %v %v %v\n", event.Id, event.Summary, err)
 			}
 		}
 	}
@@ -392,8 +411,8 @@ func main() {
 		if calendarID == "" || !ok {
 			calendarID, err = createCalendar(
 				srv,
-				fmt.Sprintf("FA16 - %v", location),
-				fmt.Sprintf("FOSSASIA 2016 Schedule - %v\nSource available at https://github.com/sogko/fossasia-2016-google-calendar", location),
+				fmt.Sprintf("FA16 @ %v", location),
+				fmt.Sprintf("FOSSASIA 2016 Schedule at %v\nSource available at https://github.com/sogko/fossasia-2016-google-calendar", location),
 			)
 
 			calendarData.LocationCalendarIDs[location] = calendarID
@@ -412,7 +431,7 @@ func main() {
 			// add event to location calendar
 			newEvent, err := srv.Events.Insert(calendarID, event).Do()
 			if err != nil {
-				log.Fatalf("Error inserting event\n", err)
+				log.Printf("Error inserting event\n", err)
 			} else {
 				log.Printf("Inserted %v %v\n", newEvent.Id, newEvent.Summary)
 			}
@@ -420,21 +439,21 @@ func main() {
 	}
 
 	// print URL to add calendars
-	fmt.Println("\n\nView MASTER calendar at: ", calendarData.MasterCalendarURL())
-	fmt.Println("\n\nView TRACK calendar at: ", calendarData.TrackCalendarURL())
-	fmt.Println("\n\nView LOCATION calendar at: ", calendarData.LocationCalendarURL())
+	fmt.Println("\n\nView MASTER calendar at: ", calendarData.GetMasterCalendarURL())
+	fmt.Println("\n\nView TRACK calendar at: ", calendarData.GetTrackCalendarURL())
+	fmt.Println("\n\nView LOCATION calendar at: ", calendarData.GetLocationCalendarURL())
 
 	// store calendar data into cache
 	buf := make([]byte, 0)
 	out := bytes.NewBuffer(buf)
 	j, err := json.MarshalIndent(&calendarData, "", "  ")
 	if err != nil {
-		log.Fatalf("Error marshalling calendar ids data%v\n", err)
+		log.Printf("Error marshalling calendar ids data%v\n", err)
 	}
 	ioutil.WriteFile(CalendarDataFilename, j, os.ModePerm)
 	_, err = out.Write(j)
 	if err != nil {
-		log.Fatalf("Error writing calendar ids data%v\n", err)
+		log.Printf("Error writing calendar ids data%v\n", err)
 	}
 	if err == nil {
 		fmt.Println("\nWrote calendar ids to: ", CalendarDataFilename)
