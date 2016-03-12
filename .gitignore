@@ -22,3 +22,5 @@ _testmain.go
 *.exe
 *.test
 *.prof
+service_key.sogko.json
+service_key.json

@@ -175,7 +175,7 @@ func main() {
 	if masterCalendarID == "" {
 		calendarSummary := fmt.Sprintf("FOSSASIA 2016 - ALL")
 		newCal, err := srv.Calendars.Insert(&calendar.Calendar{
-			Description: "FOSSASIA 2016 Schedule\nSource available at http://github.com/sogko/fossasia-2016-google-calendar",
+			Description: "FOSSASIA 2016 Schedule\nSource available at https://github.com/sogko/fossasia-2016-google-calendar",
 			Summary:     calendarSummary,
 			TimeZone:    "Asia/Singapore",
 			Location:    "Singapore",
@@ -217,7 +217,7 @@ func main() {
 		if calendarID == "" || !ok {
 			calendarSummary := fmt.Sprintf("FA16 - %v", track.Name)
 			newCal, err := srv.Calendars.Insert(&calendar.Calendar{
-				Description: fmt.Sprintf("FOSSASIA 2016 Schedule - %v\nSource available at hhttp://github.com/sogko/fossasia-2016-google-calendar", track.Name),
+				Description: fmt.Sprintf("FOSSASIA 2016 Schedule - %v\nSource available at https://github.com/sogko/fossasia-2016-google-calendar", track.Name),
 				Summary:     calendarSummary,
 				TimeZone:    "Asia/Singapore",
 				Location:    "Singapore",
