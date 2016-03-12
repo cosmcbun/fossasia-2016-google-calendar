@@ -205,7 +205,7 @@ func main() {
 	events, _ := srv.Events.List(masterCalendarID).Do()
 	if events != nil {
 		for _, event := range events.Items {
-			log.Println("Deleteing ", event.Id, event.Summary)
+			log.Println("Deleting ", event.Id, event.Summary)
 			srv.Events.Delete(masterCalendarID, event.Id).Do()
 		}
 	}
@@ -252,7 +252,7 @@ func main() {
 		events, _ := srv.Events.List(calendarID).Do()
 		if events != nil {
 			for _, event := range events.Items {
-				log.Println("Deleteing ", event.Id, event.Summary)
+				log.Println("Deleting ", event.Id, event.Summary)
 				srv.Events.Delete(calendarID, event.Id).Do()
 			}
 		}
