@@ -116,7 +116,7 @@ type FOSSAsiaEvent struct {
 	Sessions []*SessionEntry `json:"sessions"`
 }
 
-type FOSSAsiaCalendarIDs struct {
+type AppData struct {
 	MasterCalendarID    string            `json:"master_calendar_id"`
 	TrackCalendarIDs    map[string]string `json:"track_calendar_ids"`
 	LocationCalendarIDs map[string]string `json:"location_calendar_ids"`
@@ -125,12 +125,12 @@ type FOSSAsiaCalendarIDs struct {
 	LocationCalendarURL string            `json:"location_calendar_url"`
 }
 
-func (d *FOSSAsiaCalendarIDs) GetMasterCalendarURL() string {
+func (d *AppData) GetMasterCalendarURL() string {
 	url := []string{GoogleCalendarURLBase, "?", d.MasterCalendarID}
 	d.MasterCalendarURL = strings.Join(url, "")
 	return d.MasterCalendarURL
 }
-func (d *FOSSAsiaCalendarIDs) GetTrackCalendarURL() string {
+func (d *AppData) GetTrackCalendarURL() string {
 	url := []string{GoogleCalendarURLBase, "?"}
 	for _, calendarID := range d.TrackCalendarIDs {
 		url = append(url, fmt.Sprintf("cid=%v&", calendarID))
@@ -138,7 +138,7 @@ func (d *FOSSAsiaCalendarIDs) GetTrackCalendarURL() string {
 	d.TrackCalendarURL = strings.Join(url, "")
 	return d.TrackCalendarURL
 }
-func (d *FOSSAsiaCalendarIDs) GetLocationCalendarURL() string {
+func (d *AppData) GetLocationCalendarURL() string {
 	url := []string{GoogleCalendarURLBase, "?"}
 	for _, calendarID := range d.LocationCalendarIDs {
 		url = append(url, fmt.Sprintf("cid=%v&", calendarID))
@@ -192,14 +192,11 @@ func clearCalendar(srv *calendar.Service, calendarID string) {
 func main() {
 
 	// get cached data
-	calendarData := FOSSAsiaCalendarIDs{}
+	calendarData := AppData{}
 	b, err := ioutil.ReadFile(CalendarDataFilename)
 	err = json.Unmarshal(b, &calendarData)
 	if err != nil {
-		calendarData = FOSSAsiaCalendarIDs{
-			TrackCalendarIDs:    map[string]string{},
-			LocationCalendarIDs: map[string]string{},
-		}
+		calendarData = AppData{}
 	}
 	if calendarData.TrackCalendarIDs == nil || len(calendarData.TrackCalendarIDs) == 0 {
 		calendarData.TrackCalendarIDs = map[string]string{}
@@ -260,7 +257,7 @@ func main() {
 			description = fmt.Sprintf("%v\n\n%v", session.Description, description)
 		}
 
-		// add to track calendar
+		// create event
 		event := &calendar.Event{
 			Summary:     title,
 			Description: description,
@@ -355,7 +352,6 @@ func main() {
 		calendarData.MasterCalendarID = masterCalendarID
 	}
 	// clear all existing events
-	log.Println("masterCalendarID", masterCalendarID)
 	clearCalendar(srv, masterCalendarID)
 
 	// for each track, create a calendar and add its events
