@@ -56,23 +56,27 @@ const GoogleCalendarURLBase = "https://calendar.google.com/calendar/render"
 const DefaultLocation = "Misc"
 
 var ScrubbedLocation = map[string]string{
-	"Exhibition and Snack Area":              "Exhibition and Snack Area",
-	"Level 3, Dalton Hall":                   "Level 3, Dalton Hall",
-	"Level 1, Observatory Classroom":         "Level 1, Observatory Classroom",
-	"Level 3, Faraday Hall":                  "Level 3, Faraday Hall",
-	"Level 3, Planck Hall":                   "Level 3, Planck Hall",
-	"Level 2, Room to be decided":            "Level 2, Room to be decided",
-	"Level 3, Fermi Hall":                    "Level 3, Fermi Hall",
-	"Level 2, Herschel Hall":                 "Level 2, Herschel Hall",
-	"Clarke Quay":                            "Level 1, Ground Floor, Exhibition Hall",
-	"Level 1, Digital Design Studio":         "Level 1, Digital Design Studio",
-	"Level 2, Einstein Hall":                 "Level 2, Einstein Hall",
-	"Level 1, Tinkering Studio":              "Level 1, Tinkering Studio",
-	"Level 1, Ground Floor, Exhibition Hall": "Level 1, Ground Floor, Exhibition Hall",
-	"Marquee Theatre":                        "Marquee Theatre",
-	"Dalton Hall":                            "Level 3, Dalton Hall",
-	"Level 3, Lewis Hall":                    "Level 3, Lewis Hall",
-	"Level 3, Pauling Hall":                  "Level 3, Pauling Hall",
+	"Exhibition and Snack Area":                          "Exhibition and Snack Area",
+	"Level 3, Dalton Hall":                               "Level 3, Dalton Hall",
+	"Level 3, Level 3, Dalton Hall":                      "Level 3, Dalton Hall",
+	"Level 1, Observatory Room":                          "Level 1, Observatory Room",
+	"Level 3, Faraday Lab":                               "Level 3, Faraday Lab",
+	"Level 3, Planck Lab":                                "Level 3, Planck Lab",
+	"Level 2, Room to be decided":                        "Level 2, Room to be decided",
+	"Level 3, Fermi Lab":                                 "Level 3, Fermi Lab",
+	"Level 2, Herschel Lab":                              "Level 2, Herschel Lab",
+	"Clarke Quay":                                        "Level 1, Ground Floor, Exhibition Hall",
+	"Level 1, Digital Design Studio":                     "Level 1, Digital Design Studio",
+	"Level 2, Einstein Room":                             "Level 2, Einstein Room",
+	"Level 2, Einstein Hall":                             "Level 2, Einstein Room",
+	"Level 1, Tinkering Studio":                          "Level 1, Tinkering Studio",
+	"Level 1, Ground Floor, Exhibition Hall":             "Level 1, Ground Floor, Exhibition Hall",
+	"Marquee Theatre":                                    "Marquee Theatre",
+	"Dalton Hall":                                        "Level 3, Dalton Hall",
+	"Level 3, Lewis Lab":                                 "Level 3, Lewis Lab",
+	"Level 3, Pauling Lab":                               "Level 3, Pauling Lab",
+	"Level 1, Eco Garden Lab":                            "Level 1, Eco Garden Lab",
+	"Level 1, Ground Floor, Scientist For a day, Hall A": "Level 1, Ground Floor, Scientist For a day, Hall A",
 }
 
 type Speaker struct {
@@ -313,7 +317,10 @@ func main() {
 		if location == "" {
 			location = DefaultLocation
 		}
-		location, _ = ScrubbedLocation[location]
+		location, ok := ScrubbedLocation[location]
+		if !ok {
+			location = session.Location
+		}
 
 		// collect locations
 		hasLocation := false
