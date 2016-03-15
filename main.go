@@ -195,18 +195,18 @@ func clearCalendar(srv *calendar.Service, calendarID string) {
 
 func main() {
 
-	// get cached data
-	calendarData := AppData{}
+	// get cached app data
+	appData := AppData{}
 	b, err := ioutil.ReadFile(CalendarDataFilename)
-	err = json.Unmarshal(b, &calendarData)
+	err = json.Unmarshal(b, &appData)
 	if err != nil {
-		calendarData = AppData{}
+		appData = AppData{}
 	}
-	if calendarData.TrackCalendarIDs == nil || len(calendarData.TrackCalendarIDs) == 0 {
-		calendarData.TrackCalendarIDs = map[string]string{}
+	if appData.TrackCalendarIDs == nil || len(appData.TrackCalendarIDs) == 0 {
+		appData.TrackCalendarIDs = map[string]string{}
 	}
-	if calendarData.LocationCalendarIDs == nil || len(calendarData.LocationCalendarIDs) == 0 {
-		calendarData.LocationCalendarIDs = map[string]string{}
+	if appData.LocationCalendarIDs == nil || len(appData.LocationCalendarIDs) == 0 {
+		appData.LocationCalendarIDs = map[string]string{}
 	}
 
 	// get FOSSASIA 2016 sessions data (JSON)
@@ -242,7 +242,7 @@ func main() {
 		log.Fatalf("Unable to retrieve calendar Client %v", err)
 	}
 
-	// create events for each sessions
+	// create events for each session
 	events := []*calendar.Event{}
 	sessionsEventsMap := map[string]*calendar.Event{}
 	for _, session := range sessionsData.Sessions {
