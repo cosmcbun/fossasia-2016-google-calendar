@@ -347,7 +347,7 @@ func main() {
 	locationCalendarIDsMap := map[string]string{}
 
 	// create a master "ALL" calendar. why? because.
-	masterCalendarID := calendarData.MasterCalendarID
+	masterCalendarID := appData.MasterCalendarID
 	if masterCalendarID == "" {
 
 		masterCalendarID, err = createCalendar(
@@ -356,7 +356,7 @@ func main() {
 			"FOSSASIA 2016 Schedule\nSource available at https://github.com/sogko/fossasia-2016-google-calendar",
 		)
 
-		calendarData.MasterCalendarID = masterCalendarID
+		appData.MasterCalendarID = masterCalendarID
 	}
 	// clear all existing events
 	clearCalendar(srv, masterCalendarID)
@@ -368,7 +368,7 @@ func main() {
 		// create calendar for track
 		track, _ := tracksMap[trackID]
 		trackIDStr := fmt.Sprintf("%v", trackID)
-		calendarID, ok := calendarData.TrackCalendarIDs[trackIDStr]
+		calendarID, ok := appData.TrackCalendarIDs[trackIDStr]
 		if calendarID == "" || !ok {
 
 			calendarID, err = createCalendar(
@@ -377,7 +377,7 @@ func main() {
 				fmt.Sprintf("FOSSASIA 2016 Schedule - %v\nSource available at https://github.com/sogko/fossasia-2016-google-calendar", track.Name),
 			)
 
-			calendarData.TrackCalendarIDs[trackIDStr] = calendarID
+			appData.TrackCalendarIDs[trackIDStr] = calendarID
 
 		}
 		// clear all existing events
@@ -410,7 +410,7 @@ func main() {
 	for location, events := range eventsLocationsMap {
 
 		// create calendar for location
-		calendarID, ok := calendarData.LocationCalendarIDs[location]
+		calendarID, ok := appData.LocationCalendarIDs[location]
 		if calendarID == "" || !ok {
 			calendarID, err = createCalendar(
 				srv,
@@ -418,7 +418,7 @@ func main() {
 				fmt.Sprintf("FOSSASIA 2016 Schedule at %v\nSource available at https://github.com/sogko/fossasia-2016-google-calendar", location),
 			)
 
-			calendarData.LocationCalendarIDs[location] = calendarID
+			appData.LocationCalendarIDs[location] = calendarID
 
 		}
 		// clear all existing events
@@ -442,14 +442,14 @@ func main() {
 	}
 
 	// print URL to add calendars
-	fmt.Println("\n\nView MASTER calendar at: ", calendarData.GetMasterCalendarURL())
-	fmt.Println("\n\nView TRACK calendar at: ", calendarData.GetTrackCalendarURL())
-	fmt.Println("\n\nView LOCATION calendar at: ", calendarData.GetLocationCalendarURL())
+	fmt.Println("\n\nView MASTER calendar at: ", appData.GetMasterCalendarURL())
+	fmt.Println("\n\nView TRACK calendar at: ", appData.GetTrackCalendarURL())
+	fmt.Println("\n\nView LOCATION calendar at: ", appData.GetLocationCalendarURL())
 
 	// store calendar data into cache
 	buf := make([]byte, 0)
 	out := bytes.NewBuffer(buf)
-	j, err := json.MarshalIndent(&calendarData, "", "  ")
+	j, err := json.MarshalIndent(&appData, "", "  ")
 	if err != nil {
 		log.Printf("Error marshalling calendar ids data%v\n", err)
 	}
