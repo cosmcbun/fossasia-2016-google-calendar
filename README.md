@@ -22,10 +22,14 @@ Update: I've also separated the events by location, so you can easily decide if 
 
 ## WebCal Link (Recommended)
 
-Click the following links to subscribe the FOSSASIA 2016 calendar on your favourite Calendar app
+Copy the following links to your browser navigation bar to subscribe the FOSSASIA 2016 calendar on your favourite Calendar app.
+
+(Man, Github really does not like non-http(s) links)
 
 [FOSSASIA 2016 - ALL] 
-<a href="webcal://p42-calendars.icloud.com/published/2/QmWuTst1nDopR6oQVVIkV4co0ONQVq4lD2s7XeBGTdDZmn8J4lBQvKzgNWwSpa0w-QQJEdIT3ywlU105GBNXW3zfaDBSPNaBrl-krjqFbz8">Subscribe</a>
+```
+webcal://p42-calendars.icloud.com/published/2/QmWuTst1nDopR6oQVVIkV4co0ONQVq4lD2s7XeBGTdDZmn8J4lBQvKzgNWwSpa0w-QQJEdIT3ywlU105GBNXW3zfaDBSPNaBrl-krjqFbz8
+```
 
 All events in one calendar
 
