@@ -35,7 +35,7 @@ Separate calendars for each location
 
 ## iCal Links
 
-Click the following links to download iCal (.ics) and add to your favourite Calendar app.
+Click the following links to download the iCal files (.ics) and add them to your favourite Calendar app.
 
 [FOSSASIA 2016 - ALL](https://calendar.google.com/calendar/ical/oqrj3a93g17r1pgckrr2sv4klc%40group.calendar.google.com/public/basic.ics)
 All events in one calendar
@@ -43,8 +43,6 @@ All events in one calendar
 
 ### Updates:
 
-- 17 March 2015, 08:00pm: New location calendars
-  - Level 1, Ground Floor, Exhibition Hall A [(Add)](https://calendar.google.com/calendar/render?cid=6sqf6g3sfrltvoshdrj3uuc2gg@group.calendar.google.com)
 - 14 March 2015, 07:07pm: New location calendars
   - Level 1 Eco Garden Lab [(Add)](https://calendar.google.com/calendar/render?cid=gp7chu22da63qvknmohrli5078@group.calendar.google.com)
   - Level 1, Ground Floor, Scientist For a day, Hall A [(Add)](https://calendar.google.com/calendar/render?cid=h873kna6o9jseg6d594o22jj44@group.calendar.google.com)
@@ -70,7 +68,7 @@ I try to update it as soon as I can, as long as life don't get in my way.
 
 Nope, the updates currently have to be triggered manually.
 
-Probably if someone donates a Linux instance for a forever-online machine, that can run <=Go 1.5, probably.
+Probably if someone donates a Linux instance for a forever-online machine, that can run >=Go 1.5, probably.
 
 ##### __Would re-adding the iCals into my Calendar app create duplicate entries?__
 
@@ -82,7 +80,7 @@ Note: This would only affect iCal links generated after __Thurs, 17 March 2016 0
 
  
 ## Wanna to run it?
-You don't really need to run this to get the latest schedule in your Google Calendar. Just click the URLs above.
+You don't really need to run this to get the latest schedule in your Calendar apps. Just click the URLs above.
  
  But if you want to generate your own calendars, go ahead.
 
