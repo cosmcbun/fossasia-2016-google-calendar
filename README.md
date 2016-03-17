@@ -24,7 +24,8 @@ Update: I've also separated the events by location, so you can easily decide if 
 
 Click the following links to subscribe the FOSSASIA 2016 calendar on your favourite Calendar app
 
-[FOSSASIA 2016 - ALL](webcal://p42-calendars.icloud.com/published/2/QmWuTst1nDopR6oQVVIkV4co0ONQVq4lD2s7XeBGTdDZmn8J4lBQvKzgNWwSpa0w-QQJEdIT3ywlU105GBNXW3zfaDBSPNaBrl-krjqFbz8)
+[FOSSASIA 2016 - ALL] webcal://p42-calendars.icloud.com/published/2/QmWuTst1nDopR6oQVVIkV4co0ONQVq4lD2s7XeBGTdDZmn8J4lBQvKzgNWwSpa0w-QQJEdIT3ywlU105GBNXW3zfaDBSPNaBrl-krjqFbz8
+
 All events in one calendar
 
 Note: You might want to consider having your Calendar app auto-refresh it at a reasonable interval (every hour is a good start).
