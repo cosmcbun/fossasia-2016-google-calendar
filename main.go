@@ -48,7 +48,6 @@ import (
 
 */
 
-const DefaultCalendarID = "jtnlrhbvsrh8jvjdqku441uq74@group.calendar.google.com" // set it to blank to create a new calendar
 const SessionsJSONURL = "https://raw.githubusercontent.com/fossasia/open-event-scraper/master/out/sessions.json"
 const ServiceKeyFilename = "service_key.json"
 const CalendarDataFilename = "data.json"
@@ -71,6 +70,7 @@ var ScrubbedLocation = map[string]string{
 	"Level 2, Einstein Hall":                             "Level 2, Einstein Room",
 	"Level 1, Tinkering Studio":                          "Level 1, Tinkering Studio",
 	"Level 1, Ground Floor, Exhibition Hall":             "Level 1, Ground Floor, Exhibition Hall",
+	"Level 1, Ground Floor, Exhibition Hall A":           "Level 1, Ground Floor, Exhibition Hall",
 	"Marquee Theatre":                                    "Marquee Theatre",
 	"Dalton Hall":                                        "Level 3, Dalton Hall",
 	"Level 3, Lewis Lab":                                 "Level 3, Lewis Lab",
@@ -121,13 +121,15 @@ type FOSSAsiaEvent struct {
 }
 
 type AppData struct {
-	MasterCalendarID    string            `json:"master_calendar_id"`
-	MasterCalendarSessionIDs    map[string]string `json:"master_calendar_session_ids"`
-	TrackCalendarIDs    map[string]string `json:"track_calendar_ids"`
-	LocationCalendarIDs map[string]string `json:"location_calendar_ids"`
-	MasterCalendarURL   string            `json:"master_calendar_url"`
-	TrackCalendarURL    string            `json:"track_calendar_url"`
-	LocationCalendarURL string            `json:"location_calendar_url"`
+	MasterCalendarID           string            `json:"master_calendar_id"`
+	TrackCalendarIDs           map[string]string `json:"track_calendar_ids"`
+	LocationCalendarIDs        map[string]string `json:"location_calendar_ids"`
+	MasterCalendarSessionIDs   map[string]string `json:"master_calendar_session_ids"`
+	TrackCalendarSessionIDs    map[string]string `json:"track_calendar_session_ids"`
+	LocationCalendarSessionIDs map[string]string `json:"location_calendar_session_ids"`
+	MasterCalendarURL          string            `json:"master_calendar_url"`
+	TrackCalendarURL           string            `json:"track_calendar_url"`
+	LocationCalendarURL        string            `json:"location_calendar_url"`
 }
 
 func (d *AppData) GetMasterCalendarURL() string {
@@ -178,30 +180,123 @@ func createCalendar(srv *calendar.Service, summary, description string) (string,
 
 	return newCal.Id, nil
 }
-func clearCalendar(srv *calendar.Service, calendarID string) {
-	events, err := srv.Events.List(calendarID).MaxResults(2500).SingleEvents(true).ShowDeleted(false).Do()
-	if err != nil {
-		log.Printf(`Error retrieving events for %v`, calendarID)
-	}
-	if events != nil {
-		for _, event := range events.Items {
-			log.Println("Deleting ", event.Id, event.Summary, calendarID)
-			err := srv.Events.Delete(calendarID, event.Id).Do()
+func removeEntriesForDeletedSessionsFromCalendar(srv *calendar.Service, sessionIDEventIDMap map[string]string, calendarID string, sessionIDs []string) {
+
+	// for each (session_id, event_id) pair, if the session_id does not exists in sessionIDs slice,
+	// it means that the session_id has been removed
+	for sessionID, eventID := range sessionIDEventIDMap {
+		if eventID == "" {
+			continue
+		}
+		if sessionID == "" {
+			continue
+		}
+		hasSessionID := false
+		for _, s := range sessionIDs {
+			if sessionID == s {
+				hasSessionID = true
+				break
+			}
+		}
+		if !hasSessionID {
+			log.Println("Deleting event from calendar", eventID, calendarID)
+			err := srv.Events.Delete(calendarID, eventID).Do()
 			if err != nil {
-				log.Printf(`Error deleting event %v`, event.Id)
+				log.Println("Error deleting event", err)
 			}
 		}
 	}
 }
 
+func insertOrUpdateEventForSession(srv *calendar.Service, appData *AppData, calendarType string, calendarID string, sessionID string, event *calendar.Event) {
+
+	sessionIDEventIDMap := map[string]string{}
+	switch calendarType {
+	case "master":
+		sessionIDEventIDMap = appData.MasterCalendarSessionIDs
+	case "track":
+		sessionIDEventIDMap = appData.TrackCalendarSessionIDs
+	case "location":
+		sessionIDEventIDMap = appData.LocationCalendarSessionIDs
+	default:
+		log.Println("Failed to create or update event, invalid calendar type")
+		return
+	}
+
+	saveNewEventID := func(appData *AppData, calendarType string, sessionID string, eventID string) {
+		if sessionID == "" {
+			log.Printf("[%v]Warning: empty session ID\n", calendarID)
+			return
+		}
+		switch calendarType {
+		case "master":
+			appData.MasterCalendarSessionIDs[sessionID] = eventID
+		case "track":
+			appData.TrackCalendarSessionIDs[sessionID] = eventID
+		case "location":
+			appData.LocationCalendarSessionIDs[sessionID] = eventID
+		default:
+			log.Println("Failed to save new event id, invalid calendar type")
+			return
+		}
+	}
+
+	// if current session id has an existing event id, set it so that we can update instead of destroy + create
+	if eventID, ok := sessionIDEventIDMap[sessionID]; !ok || eventID == "" {
+		// add new event to master calendar
+		newEvent, err := srv.Events.Insert(calendarID, event).Do()
+		if err != nil {
+			log.Printf("[%v] Error inserting %v %v %v\n", calendarType, event.Summary, err)
+		} else {
+			log.Printf("[%v] Inserted %v %v\n", calendarType, newEvent.Id, newEvent.Summary)
+
+			if sessionID != "" {
+				// save event id to app data
+				saveNewEventID(appData, calendarType, sessionID, newEvent.Id)
+			} else {
+				log.Printf("[%v] Couldn't find session ID for given event [1]\n", calendarType)
+			}
+		}
+	} else {
+		// update prev event
+		newEvent, err := srv.Events.Update(calendarID, eventID, event).Do()
+		if err != nil {
+			log.Printf("[%v] Error updating %v %v %v\n", calendarType, eventID, event.Summary, err)
+		} else {
+			log.Printf("[%v] Updated %v %v\n", calendarType, newEvent.Id, newEvent.Summary)
+
+			if sessionID != "" {
+				// update event id to app data
+				saveNewEventID(appData, calendarType, sessionID, newEvent.Id)
+			} else {
+				log.Printf("[%v] Couldn't find session ID for given event [2]\n", calendarType)
+			}
+		}
+	}
+
+}
+
+func findSessionIDForEvent(sessionsEventsMap map[string]*calendar.Event, event *calendar.Event) string {
+	sessionID := ""
+	for s, ev := range sessionsEventsMap {
+		if ev == event {
+			sessionID = s
+			break
+		}
+	}
+	if sessionID == "" {
+		log.Println("Couldn't find session ID for given event", event.Summary)
+	}
+	return sessionID
+}
 func main() {
 
 	// get cached app data
-	appData := AppData{}
+	appData := &AppData{}
 	b, err := ioutil.ReadFile(CalendarDataFilename)
 	err = json.Unmarshal(b, &appData)
 	if err != nil {
-		appData = AppData{}
+		appData = &AppData{}
 	}
 	if appData.TrackCalendarIDs == nil || len(appData.TrackCalendarIDs) == 0 {
 		appData.TrackCalendarIDs = map[string]string{}
@@ -211,6 +306,12 @@ func main() {
 	}
 	if appData.MasterCalendarSessionIDs == nil || len(appData.MasterCalendarSessionIDs) == 0 {
 		appData.MasterCalendarSessionIDs = map[string]string{}
+	}
+	if appData.TrackCalendarSessionIDs == nil || len(appData.TrackCalendarSessionIDs) == 0 {
+		appData.TrackCalendarSessionIDs = map[string]string{}
+	}
+	if appData.LocationCalendarSessionIDs == nil || len(appData.LocationCalendarSessionIDs) == 0 {
+		appData.LocationCalendarSessionIDs = map[string]string{}
 	}
 
 	// get FOSSASIA 2016 sessions data (JSON)
@@ -247,9 +348,9 @@ func main() {
 	}
 
 	// use this to figure out if a session has been removed, so that we can clean up the calendar
-	masterCalendarSessionsIDs := []string{}
+	sessionsIDs := []string{}
 
-	// create events for each session
+	// create event for each session
 	events := []*calendar.Event{}
 	sessionsEventsMap := map[string]*calendar.Event{}
 	for _, session := range sessionsData.Sessions {
@@ -283,12 +384,7 @@ func main() {
 			},
 		}
 
-		// if current session id has an existing event id, set it so that we can update instead of destroy + create
-		if eventID, ok := appData.MasterCalendarSessionIDs[session.SessionID]; ok && eventID != "" {
-			event.Id = eventID
-		}
-
-		masterCalendarSessionsIDs = append(masterCalendarSessionsIDs, session.SessionID)
+		sessionsIDs = append(sessionsIDs, session.SessionID)
 
 		events = append(events, event)
 		sessionsEventsMap[session.SessionID] = event
@@ -372,32 +468,9 @@ func main() {
 
 		appData.MasterCalendarID = masterCalendarID
 	}
-//	 clear all existing events
-//	clearCalendar(srv, masterCalendarID)
 
 	// removed newly-deleted events from master calendar
-	for sessionID, eventID := range appData.MasterCalendarSessionIDs {
-		if eventID == "" {
-			continue
-		}
-		if sessionID == "" {
-			continue
-		}
-		hasSessionID := false
-		for _, s := range masterCalendarSessionsIDs {
-			if sessionID == s {
-				hasSessionID = true
-				break
-			}
-		}
-		if !hasSessionID {
-			log.Println("Deleting event from master calender", eventID)
-			err := srv.Events.Delete(masterCalendarID, eventID).Do()
-			if err != nil {
-				log.Println("Error deleting event", err)
-			}
-		}
-	}
+	removeEntriesForDeletedSessionsFromCalendar(srv, appData.MasterCalendarSessionIDs, masterCalendarID, sessionsIDs)
 
 	// for each track, create a calendar and add its events
 	// at the same time, add events to "ALL" calendar
@@ -418,8 +491,9 @@ func main() {
 			appData.TrackCalendarIDs[trackIDStr] = calendarID
 
 		}
-		// clear all existing events
-		clearCalendar(srv, calendarID)
+
+		// removed newly-deleted events from track calendar
+		removeEntriesForDeletedSessionsFromCalendar(srv, appData.TrackCalendarSessionIDs, calendarID, sessionsIDs)
 
 		// store created calendar ids
 		trackCalendarIDsMap[trackID] = calendarID
@@ -429,51 +503,14 @@ func main() {
 		for _, event := range events {
 
 			// find session id for given event
-			sessionID := ""
-			for s, ev := range sessionsEventsMap {
-				if ev == event {
-					sessionID = s
-					break
-				}
-			}
-			if sessionID == "" {
-				log.Println("[master] Couldn't find session ID for given event [0]")
-			}
+			sessionID := findSessionIDForEvent(sessionsEventsMap, event)
 
-			// add event to track calendar
-			newEvent, err := srv.Events.Insert(calendarID, event).Do()
-			if err != nil {
-				log.Printf("Error inserting event\n", err)
-			} else {
-				log.Printf("Inserted %v %v\n", newEvent.Id, newEvent.Summary)
-			}
+			// add or update event on track calendar
+			insertOrUpdateEventForSession(srv, appData, "track", calendarID, sessionID, event)
 
-			if event.Id == "" {
-				// add new event to master calendar
-				newEvent, err = srv.Events.Insert(masterCalendarID, event).Do()
-				if err != nil {
-					log.Printf("[master] Error inserting %v %v %v\n", event.Id, event.Summary, err)
-				} else {
+			// add or update event on master calendar
+			insertOrUpdateEventForSession(srv, appData, "master", calendarID, sessionID, event)
 
-					if sessionID != "" {
-						appData.MasterCalendarSessionIDs[sessionID] = newEvent.Id
-					} else {
-						log.Println("[master] Couldn't find session ID for given event [1]")
-					}
-				}
-			} else {
-				// update prev event
-				newEvent, err = srv.Events.Update(masterCalendarID, event.Id, event).Do()
-				if err != nil {
-					log.Printf("[master] Error updating %v %v %v\n", event.Id, event.Summary, err)
-				} else {
-					if sessionID != "" {
-						appData.MasterCalendarSessionIDs[sessionID] = newEvent.Id
-					} else {
-						log.Println("[master] Couldn't find session ID for given event [2]")
-					}
-				}
-			}
 		}
 	}
 
@@ -492,8 +529,9 @@ func main() {
 			appData.LocationCalendarIDs[location] = calendarID
 
 		}
-		// clear all existing events
-		clearCalendar(srv, calendarID)
+
+		// removed newly-deleted events from location calendar
+		removeEntriesForDeletedSessionsFromCalendar(srv, appData.LocationCalendarSessionIDs, calendarID, sessionsIDs)
 
 		// store created calendar ids
 		locationCalendarIDsMap[location] = calendarID
@@ -502,13 +540,11 @@ func main() {
 		log.Printf("Inserting %v session entries for location %v\n", len(events), location)
 		for _, event := range events {
 
-			// add event to location calendar
-			newEvent, err := srv.Events.Insert(calendarID, event).Do()
-			if err != nil {
-				log.Printf("Error inserting event\n", err)
-			} else {
-				log.Printf("Inserted %v %v\n", newEvent.Id, newEvent.Summary)
-			}
+			// find session id for given event
+			sessionID := findSessionIDForEvent(sessionsEventsMap, event)
+
+			// add or update event on location calendar
+			insertOrUpdateEventForSession(srv, appData, "location", calendarID, sessionID, event)
 		}
 	}
 
