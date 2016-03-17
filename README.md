@@ -26,7 +26,7 @@ Copy the following links to your browser navigation bar to subscribe the FOSSASI
 
 (Man, Github really does not like non-http(s) links)
 
-[FOSSASIA 2016 - ALL] 
+<a href="webcal://p42-calendars.icloud.com/published/2/QmWuTst1nDopR6oQVVIkV4co0ONQVq4lD2s7XeBGTdDZmn8J4lBQvKzgNWwSpa0w-QQJEdIT3ywlU105GBNXW3zfaDBSPNaBrl-krjqFbz8">FOSSASIA 2016 - ALL</a>
 ```
 webcal://p42-calendars.icloud.com/published/2/QmWuTst1nDopR6oQVVIkV4co0ONQVq4lD2s7XeBGTdDZmn8J4lBQvKzgNWwSpa0w-QQJEdIT3ywlU105GBNXW3zfaDBSPNaBrl-krjqFbz8
 ```
