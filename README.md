@@ -22,16 +22,16 @@ Update: I've also separated the events by location, so you can easily decide if 
 
 ## WebCal Link (Recommended)
 
-Copy the following links to your browser navigation bar to subscribe the FOSSASIA 2016 calendar on your favourite Calendar app.
+Copy the following link to subscribe the FOSSASIA 2016 calendar on your favourite Calendar app.
 
-(Man, Github really does not like non-http(s) links)
+_(Man, Github really does not like non-http(s) links)_
 
 <a href="webcal://p42-calendars.icloud.com/published/2/QmWuTst1nDopR6oQVVIkV4co0ONQVq4lD2s7XeBGTdDZmn8J4lBQvKzgNWwSpa0w-QQJEdIT3ywlU105GBNXW3zfaDBSPNaBrl-krjqFbz8">FOSSASIA 2016 - ALL</a>
+All events in one calendar
 ```
 webcal://p42-calendars.icloud.com/published/2/QmWuTst1nDopR6oQVVIkV4co0ONQVq4lD2s7XeBGTdDZmn8J4lBQvKzgNWwSpa0w-QQJEdIT3ywlU105GBNXW3zfaDBSPNaBrl-krjqFbz8
 ```
 
-All events in one calendar
 
 Note: You might want to consider having your Calendar app auto-refresh it at a reasonable interval (every 30 mins is a good start).
 The FOSSASIA schedule is still very much fluid at the moment. It might get hardened as the event gets along on its way, probably.
