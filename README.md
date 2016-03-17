@@ -20,7 +20,17 @@ topic of interest when deciding which talks to attend.
 Update: I've also separated the events by location, so you can easily decide if you'd be interested in the next talk or if you need to move to the next location.
 
 
-## Google Calendar Links
+## WebCal Link (Recommended)
+
+Click the following links to subscribe the FOSSASIA 2016 calendar on your favourite Calendar app
+
+[FOSSASIA 2016 - ALL](webcal://p42-calendars.icloud.com/published/2/QmWuTst1nDopR6oQVVIkV4co0ONQVq4lD2s7XeBGTdDZmn8J4lBQvKzgNWwSpa0w-QQJEdIT3ywlU105GBNXW3zfaDBSPNaBrl-krjqFbz8)
+All events in one calendar
+
+Note: You might want to consider having your Calendar app auto-refresh it at a reasonable interval (every hour is a good start).
+The FOSSASIA schedule is still very much fluid at the moment.
+
+## Google Calendar Links  (Recommended)
 
 Click the following links to add FOSSASIA 2016 schedule to your Google Calendar
 
@@ -50,9 +60,9 @@ All events in one calendar
 
 ## Frequently-asked Questions (FAQs)
 
-##### __Do I need to re-import / re-add the GCals if there are changes to the schedule?__
+##### __Do I need to re-import / re-add the GCals/WebCal if there are changes to the schedule?__
 
-Nope, you don't have to. The original GCals will be updated automatically, no need to re-add.
+Nope, you don't have to. The original GCals/WebCal will be updated automatically, no need to re-add.
 
 But do note that if you use the iCal links, you do need to re-add them again to your Calendar app.
 
@@ -60,11 +70,11 @@ But do note that if you use the iCal links, you do need to re-add them again to 
 
 Yeap, unfortunately you have to, because the iCal lives on your local machine / device.
 
-##### __How often do the GCals/iCals get updated?__
+##### __How often do the GCals/iCals/WebCal get updated?__
 
 I try to update it as soon as I can, as long as life don't get in my way.
 
-##### __Do the GCals/iCals get generated automatically every time there are changes to the `sessions.json`?__
+##### __Do the GCals/iCals/WebCal get generated automatically every time there are changes to the `sessions.json`?__
 
 Nope, the updates currently have to be triggered manually.
 
