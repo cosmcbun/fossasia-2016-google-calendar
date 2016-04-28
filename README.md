@@ -7,6 +7,10 @@ A quick and dirty little thing that takes FOSSASIA 2016 schedule and creates Goo
 ## Why?
 Because.
 
+_If you really interested in the why/how, I've shared some notes with those involved in OpenTechSummit 2016 regarding this project._
+_Check it out here: https://github.com/OpenTechSummit/2016.opentechsummit.net/issues/21#issuecomment-215343330_
+
+
 ## How?
 FOSSASIA has its schedule in JSON over here: https://raw.githubusercontent.com/fossasia/open-event-scraper/master/out/sessions.json.
 
