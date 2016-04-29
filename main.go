@@ -133,7 +133,7 @@ type AppData struct {
 }
 
 func (d *AppData) GetMasterCalendarURL() string {
-	url := []string{GoogleCalendarURLBase, "?", d.MasterCalendarID}
+	url := []string{GoogleCalendarURLBase, "?cid=", d.MasterCalendarID}
 	d.MasterCalendarURL = strings.Join(url, "")
 	return d.MasterCalendarURL
 }
@@ -509,7 +509,7 @@ func main() {
 			insertOrUpdateEventForSession(srv, appData, "track", calendarID, sessionID, event)
 
 			// add or update event on master calendar
-			insertOrUpdateEventForSession(srv, appData, "master", calendarID, sessionID, event)
+			insertOrUpdateEventForSession(srv, appData, "master", masterCalendarID, sessionID, event)
 
 		}
 	}
